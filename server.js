@@ -127,6 +127,50 @@ app.post('/registro', async (req, res) => {
     }
 });
 
+// Rota para deletar um usuário
+app.delete('/usuarios/:id', verificarToken, (req, res) => {
+    const { id } = req.params;
+
+    // Verifique se o usuário tem permissão (por exemplo, se é administrador)
+    if (req.userRole !== 'admin') {
+        return res.status(403).json({ error: 'Acesso negado. Apenas administradores podem deletar usuários.' });
+    }
+
+    db.run("DELETE FROM usuarios WHERE id = ?", [id], function(err) {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (this.changes) {
+            res.status(200).json({ message: 'Usuário deletado com sucesso!' });
+        } else {
+            res.status(404).json({ error: 'Usuário não encontrado!' });
+        }
+    });
+});
+
+// Rota para alterar o role de um usuário
+app.put('/usuarios/:id/role', verificarToken, (req, res) => {
+    const { id } = req.params; // ID do usuário que terá o role alterado
+    const { role } = req.body; // Novo role
+
+    // Verifique se o usuário tem permissão para alterar roles (por exemplo, se é administrador)
+    if (req.userRole !== 'admin') {
+        return res.status(403).json({ error: 'Acesso negado. Apenas administradores podem alterar o role de usuários.' });
+    }
+
+    // Atualizar o role do usuário com base no ID
+    db.run("UPDATE usuarios SET role = ? WHERE id = ?", [role, id], function(err) {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (this.changes) {
+            res.status(200).json({ message: 'Role do usuário alterado com sucesso!' });
+        } else {
+            res.status(404).json({ error: 'Usuário não encontrado!' });
+        }
+    });
+});
+
 // Rota para autenticar o usuário e gerar token JWT
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
